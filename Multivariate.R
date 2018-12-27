@@ -8,10 +8,24 @@ library(missForest)
 library(randomForest)
 library(doParallel)
 library(doSNOW)
-cl <- makeCluster(20, outfile="")
+cl <- makeCluster(20, outfile="") #here, change the number of clusters
 registerDoSNOW(cl)
 
-ComparMNAR_Multivariate <- function(Xtrue,a,b,r,bruit,Ns,nbcol,nbsim){
+######
+# Name: ComparMNAR_Multivariate
+# Date: 27/12/2018
+# Description: For the multivariate case, this function allow to compare different algorithms and methods to impute and estimate matrices which contain MNAR missing values.
+# The function output is a list containing, for each simulation, the mean squared errors (the prediction error and the total error) for the different algorithms and methods.
+# Arguments: 
+  #Xtrue: the parameter matrix, 
+  #a, b: the logistic regression parameters
+  #noise: sigma^2, the added noise to the parameter matrix
+  #Ns: number of Monte Carlo simulations in the EM algorithm
+  #nbcol: number of missing variables, the missing variables are then the first nbcol ones. 
+  #nbsim: number of simulations
+#####
+
+ComparMNAR_Multivariate <- function(Xtrue,a,b,r,noise,Ns,nbcol,nbsim){
   
   p<-ncol(Xtrue)
   n<-nrow(Xtrue)
@@ -29,7 +43,7 @@ ComparMNAR_Multivariate <- function(Xtrue,a,b,r,bruit,Ns,nbcol,nbsim){
     cconv=0
     while(!conv & cconv<2){
       
-      X=Xtrue+matrix(data=rnorm(n*p,0,sqrt(bruit)),ncol=p)
+      X=Xtrue+matrix(data=rnorm(n*p,0,sqrt(noise)),ncol=p)
       
       #MNAR with logistic regression
       select_prob <- function(x,a,b){ #probability of selecting coordinate Xij
@@ -104,7 +118,7 @@ ComparMNAR_Multivariate <- function(Xtrue,a,b,r,bruit,Ns,nbcol,nbsim){
       ccompt<-0
       d1<-Sys.time()
       while(diff>10^-2 & ccompt<25){
-        ParamNew <- IterEM(Xtrue,X,XNA,ThetaNew,aNew,bNew,M,Ns,bruit,algo="soft",lam="Pred",nbcol=10)
+        ParamNew <- IterEM(Xtrue,X,XNA,ThetaNew,aNew,bNew,M,Ns,noise,algo="soft",lam="Pred",nbcol=10)
         diff=ParamNew$diff
         print(diff)
         ThetaNew=ParamNew$ThetaNew
@@ -119,7 +133,7 @@ ComparMNAR_Multivariate <- function(Xtrue,a,b,r,bruit,Ns,nbcol,nbsim){
       diff=100
       ccompt2<-0
       while(diff>10^-2 & ccompt2<25){
-        ParamNew <- IterEM(Xtrue,X,XNA,ThetabisNew,abisNew,bbisNew,M,Ns,bruit,algo="FISTA",lam="Pred",nbcol=10)
+        ParamNew <- IterEM(Xtrue,X,XNA,ThetabisNew,abisNew,bbisNew,M,Ns,noise,algo="FISTA",lam="Pred",nbcol=10)
         diff=ParamNew$diff
         ThetabisNew=ParamNew$ThetaNew
         abisNew=ParamNew$a_initNew
@@ -140,7 +154,7 @@ ComparMNAR_Multivariate <- function(Xtrue,a,b,r,bruit,Ns,nbcol,nbsim){
       diff=100
       ccompt3=0
       while(diff>10^-2 & ccompt3<25){
-        ParamNew <- IterEM(Xtrue,X,XNA,ThetaNewTot,aNew,bNew,M,Ns,bruit,algo="soft",lam="Tot",nbcol=10)
+        ParamNew <- IterEM(Xtrue,X,XNA,ThetaNewTot,aNew,bNew,M,Ns,noise,algo="soft",lam="Tot",nbcol=10)
         diff=ParamNew$diff
         print(diff)
         print( MSE(ThetaNewTot,Xtrue))
@@ -156,7 +170,7 @@ ComparMNAR_Multivariate <- function(Xtrue,a,b,r,bruit,Ns,nbcol,nbsim){
       diff=100
       ccompt4=0
       while(diff>10^-2 & ccompt4<25){
-        ParamNew <- IterEM(Xtrue,X,XNA,ThetabisNewTot,abisNew,bbisNew,M,Ns,bruit,algo="FISTA",lam="Tot",nbcol=10)
+        ParamNew <- IterEM(Xtrue,X,XNA,ThetabisNewTot,abisNew,bbisNew,M,Ns,noise,algo="FISTA",lam="Tot",nbcol=10)
         diff=ParamNew$diff
         ThetabisNewTot=ParamNew$ThetaNew
         abisNew=ParamNew$a_initNew
@@ -303,23 +317,23 @@ ComparMNAR_Multivariate <- function(Xtrue,a,b,r,bruit,Ns,nbcol,nbsim){
     RES2=NULL
     gridParam=seq(0,lambda0(X)*1.1, length = 100) 
     for(i in 1:length(gridParam)){
-      X.FISTA2<- FISTANA(as.matrix(XNA),as.matrix(M),gridParam[i],bruit,alg="other")
+      X.FISTA2<- FISTANA(as.matrix(XNA),as.matrix(M),gridParam[i],noise,alg="other")
       RES2[i]=MSE(X.FISTA2[,1:p]*(1-M),X*(1-M))
       RES[i]=MSE(X.FISTA2[,1:p],Xtrue)
     }
-    X.FISTA2<- FISTANA(XNA,M,gridParam[which.min(RES)],bruit,alg="other")
-    X.FISTA2.bis<- FISTANA(XNA,M,gridParam[which.min(RES2)],bruit,alg="other")
+    X.FISTA2<- FISTANA(XNA,M,gridParam[which.min(RES)],noise,alg="other")
+    X.FISTA2.bis<- FISTANA(XNA,M,gridParam[which.min(RES2)],noise,alg="other")
     
     RES=NULL
     RES2=NULL
     gridParam=seq(0, lambda0(X)*1.1, length = 100) 
     for(i in 1:length(gridParam)){
-      X.FISTA3<- FISTANA(Y,cbind.data.frame(M,M[,1:nbcol]),gridParam[i],bruit,alg="other")
+      X.FISTA3<- FISTANA(Y,cbind.data.frame(M,M[,1:nbcol]),gridParam[i],noise,alg="other")
       RES2[i]=MSE(X.FISTA3[,1:p]*(1-M),X*(1-M))
       RES[i]=MSE(X.FISTA3[,1:p],Xtrue)
     }
-    X.FISTA3<- FISTANA(Y,cbind.data.frame(M,M[,1:nbcol]),gridParam[which.min(RES)],bruit,alg="other")
-    X.FISTA3.bis<- FISTANA(Y,cbind.data.frame(M,M[,1:nbcol]),gridParam[which.min(RES2)],bruit,alg="other")
+    X.FISTA3<- FISTANA(Y,cbind.data.frame(M,M[,1:nbcol]),gridParam[which.min(RES)],noise,alg="other")
+    X.FISTA3.bis<- FISTANA(Y,cbind.data.frame(M,M[,1:nbcol]),gridParam[which.min(RES2)],noise,alg="other")
     
     ###############
     ####### Random Forest
