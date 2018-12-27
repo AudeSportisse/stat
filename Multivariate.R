@@ -17,12 +17,13 @@ registerDoSNOW(cl)
 # Description: For the multivariate case, this function allow to compare different algorithms and methods to impute and estimate matrices which contain MNAR missing values.
 # The function output is a list containing, for each simulation, the mean squared errors (the prediction error and the total error) for the different algorithms and methods.
 # Arguments: 
-  #Xtrue: the parameter matrix, 
-  #a, b: the logistic regression parameters
-  #noise: sigma^2, the added noise to the parameter matrix
-  #Ns: number of Monte Carlo simulations in the EM algorithm
+  #Xtrue: the parameter matrix.
+  #a, b: the logistic regression parameters.
+  #r: rank of the parameter matrix.
+  #noise: sigma^2, the added noise to the parameter matrix.
+  #Ns: number of Monte Carlo simulations in the EM algorithm.
   #nbcol: number of missing variables, the missing variables are then the first nbcol ones. 
-  #nbsim: number of simulations
+  #nbsim: number of simulations.
 #####
 
 ComparMNAR_Multivariate <- function(Xtrue,a,b,r,noise,Ns,nbcol,nbsim){
