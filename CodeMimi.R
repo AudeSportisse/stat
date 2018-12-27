@@ -1,3 +1,6 @@
+###Code of Genevieve Robin
+###see https://github.com/genevievelrobin/mimi
+
 mimi.lr<-function (y, var.type = c("gaussian", "binary", "categorical", 
                           "poisson"), lambda1, maxit = 100, theta0 = NULL, thresh = 1e-05, 
           trace.it = F, lambda1.max = NULL, length = 40, upper = 12, 
