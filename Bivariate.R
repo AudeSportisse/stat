@@ -8,11 +8,27 @@ library(randomForest)
 library(missForest)
 library(doParallel)
 library(doSNOW)
-cl <- makeCluster(20, outfile="")
+cl <- makeCluster(20, outfile="") #here, change the number of clusters
 registerDoSNOW(cl)
 
 
-ComparMNAR_Bivariate <- function(Xtrue,a,b,a2,b2,r,bruit,Ns,colbis,m1,m2,nbsim){
+######
+# Name: ComparMNAR_Bivariate
+# Date: 27/12/2018
+# Description: For the bivariate case (2 missing variables: the first one and another one),this function allow to compare different algorithms and methods to impute and estimate matrices which contain MNAR missing values.
+# The function output is a list containing, for each simulation, the mean squared errors (the prediction error and the total error) for the different algorithms and methods.
+# Arguments: 
+  #Xtrue: the parameter matrix, 
+  #a, b, a2, b2: the logistic regression parameters
+  #noise: sigma^2, the added noise to the parameter matrix
+  #Ns: number of Monte Carlo simulations in the EM algorithm
+  #colbis: the second missing variable
+  #m1: the mechanism distribution of the first missing variable depends on the m1th variable.
+  #m2: the mechanism distribution of the second missing variable depends on the m2th variable. 
+  #nbsim: number of simulations
+#####
+
+ComparMNAR_Bivariate <- function(Xtrue,a,b,a2,b2,r,noise,Ns,colbis,m1,m2,nbsim){
   
   nbcol<-2
   p<-ncol(Xtrue)
@@ -35,7 +51,7 @@ ComparMNAR_Bivariate <- function(Xtrue,a,b,a2,b2,r,bruit,Ns,colbis,m1,m2,nbsim){
     while(!conv){
       
       set.seed(ksim)
-      X=Xtrue+matrix(data=rnorm(n*p,0,sqrt(bruit)),ncol=p)
+      X=Xtrue+matrix(data=rnorm(n*p,0,sqrt(noise)),ncol=p)
       
       #MNAR with logistic regression
       select_prob <- function(x,a,b){ #probability of selecting coordinate Xij
@@ -102,7 +118,7 @@ ComparMNAR_Bivariate <- function(Xtrue,a,b,a2,b2,r,bruit,Ns,colbis,m1,m2,nbsim){
       diff=100
       ccompt<-0
       while(diff>10^-2 & ccompt<50){
-        ParamNew <- IterEM_Bivariate(Xtrue,X,XNA,ThetaNew,aNew,bNew,aNew2,bNew2,M,Ns,bruit,algo="soft",lam="Pred",colbis)
+        ParamNew <- IterEM_Bivariate(Xtrue,X,XNA,ThetaNew,aNew,bNew,aNew2,bNew2,M,Ns,noise,algo="soft",lam="Pred",colbis)
         diff=ParamNew$diff
         ThetaNew=ParamNew$ThetaNew
         aNew=ParamNew$a_initNew
@@ -117,7 +133,7 @@ ComparMNAR_Bivariate <- function(Xtrue,a,b,a2,b2,r,bruit,Ns,colbis,m1,m2,nbsim){
       diff=100
       ccompt2<-0
       while(diff>10^-2 & ccompt2<50){
-        ParamNew <- IterEM_Bivariate(Xtrue,X,XNA,ThetabisNew,abisNew,bbisNew,abisNew2,bbisNew2,M,Ns,bruit,algo="FISTA",lam="Pred",colbis)
+        ParamNew <- IterEM_Bivariate(Xtrue,X,XNA,ThetabisNew,abisNew,bbisNew,abisNew2,bbisNew2,M,Ns,noise,algo="FISTA",lam="Pred",colbis)
         diff=ParamNew$diff
         ThetabisNew=ParamNew$ThetaNew
         abisNew=ParamNew$a_initNew
@@ -153,7 +169,7 @@ ComparMNAR_Bivariate <- function(Xtrue,a,b,a2,b2,r,bruit,Ns,colbis,m1,m2,nbsim){
       conv3=c()
       conv4=c()
       for (t in 1:Tt){
-        ParamNew <- IterEM_Bivariate(Xtrue,X,XNA,Theta[[t]],aListNew[[t]],bListNew[[t]],aListNew2[[t]],bListNew2[[t]],M,Ns,bruit,algo="soft",lam="Pred",colbis)
+        ParamNew <- IterEM_Bivariate(Xtrue,X,XNA,Theta[[t]],aListNew[[t]],bListNew[[t]],aListNew2[[t]],bListNew2[[t]],M,Ns,noise,algo="soft",lam="Pred",colbis)
         Theta[[t+1]]=ParamNew$ThetaNew
         aListNew[[t+1]]=ParamNew$a_initNew
         bListNew[[t+1]]=ParamNew$b_initNew
@@ -161,7 +177,7 @@ ComparMNAR_Bivariate <- function(Xtrue,a,b,a2,b2,r,bruit,Ns,colbis,m1,m2,nbsim){
         bListNew2[[t+1]]=ParamNew$b_initNew2
         conv3=c(conv3,ParamNew$conv)
         
-        ParamNew <- IterEM_Bivariate(Xtrue,X,XNA,Thetabis[[t]],abisListNew[[t]],bbisListNew[[t]],abisListNew2[[t]],bbisListNew[[t]],M,Ns,bruit,algo="FISTA",lam="Pred",colbis)
+        ParamNew <- IterEM_Bivariate(Xtrue,X,XNA,Thetabis[[t]],abisListNew[[t]],bbisListNew[[t]],abisListNew2[[t]],bbisListNew[[t]],M,Ns,noise,algo="FISTA",lam="Pred",colbis)
         Thetabis[[t+1]]=ParamNew$ThetaNew
         abisListNew[[t+1]]=ParamNew$a_initNew
         bbisListNew[[t+1]]=ParamNew$b_initNew
@@ -190,7 +206,7 @@ ComparMNAR_Bivariate <- function(Xtrue,a,b,a2,b2,r,bruit,Ns,colbis,m1,m2,nbsim){
       diff=100
       ccompt3=0
       while(diff>10^-2 & ccompt3<50){
-        ParamNew <- IterEM_Bivariate(Xtrue,X,XNA,ThetaNewTot,aNew,bNew,aNew2,bNew2,M,Ns,bruit,algo="soft",lam="Tot",colbis)
+        ParamNew <- IterEM_Bivariate(Xtrue,X,XNA,ThetaNewTot,aNew,bNew,aNew2,bNew2,M,Ns,noise,algo="soft",lam="Tot",colbis)
         diff=ParamNew$diff
         ThetaNewTot=ParamNew$ThetaNew
         aNew=ParamNew$a_initNew
@@ -205,7 +221,7 @@ ComparMNAR_Bivariate <- function(Xtrue,a,b,a2,b2,r,bruit,Ns,colbis,m1,m2,nbsim){
       diff=100
       ccompt4=0
       while(diff>10^-2 & ccompt4<50){
-        ParamNew <- IterEM_Bivariate(Xtrue,X,XNA,ThetabisNewTot,abisNew,bbisNew,abisNew2,bbisNew2,M,Ns,bruit,algo="FISTA",lam="Tot",colbis)
+        ParamNew <- IterEM_Bivariate(Xtrue,X,XNA,ThetabisNewTot,abisNew,bbisNew,abisNew2,bbisNew2,M,Ns,noise,algo="FISTA",lam="Tot",colbis)
         diff=ParamNew$diff
         ThetabisNewTot=ParamNew$ThetaNew
         abisNew=ParamNew$a_initNew
@@ -241,7 +257,7 @@ ComparMNAR_Bivariate <- function(Xtrue,a,b,a2,b2,r,bruit,Ns,colbis,m1,m2,nbsim){
       conv7=c()
       conv8=c()
       for (t in 1:Tt){
-        ParamNew <- IterEM_Bivariate(Xtrue,X,XNA,Theta[[t]],aListNew[[t]],bListNew[[t]],aListNew2[[t]],bListNew2[[t]],M,Ns,bruit,algo="soft",lam="Tot",colbis)
+        ParamNew <- IterEM_Bivariate(Xtrue,X,XNA,Theta[[t]],aListNew[[t]],bListNew[[t]],aListNew2[[t]],bListNew2[[t]],M,Ns,noise,algo="soft",lam="Tot",colbis)
         Theta[[t+1]]=ParamNew$ThetaNew
         aListNew[[t+1]]=ParamNew$a_initNew
         bListNew[[t+1]]=ParamNew$b_initNew
@@ -249,7 +265,7 @@ ComparMNAR_Bivariate <- function(Xtrue,a,b,a2,b2,r,bruit,Ns,colbis,m1,m2,nbsim){
         bListNew2[[t+1]]=ParamNew$b_initNew2
         conv7=c(conv3,ParamNew$conv)
         
-        ParamNew <- IterEM_Bivariate(Xtrue,X,XNA,Thetabis[[t]],abisListNew[[t]],bbisListNew[[t]],abisListNew2[[t]],bbisListNew2[[t]],M,Ns,bruit,algo="FISTA",lam="Tot",colbis)
+        ParamNew <- IterEM_Bivariate(Xtrue,X,XNA,Thetabis[[t]],abisListNew[[t]],bbisListNew[[t]],abisListNew2[[t]],bbisListNew2[[t]],M,Ns,noise,algo="FISTA",lam="Tot",colbis)
         Thetabis[[t+1]]=ParamNew$ThetaNew
         abisListNew[[t+1]]=ParamNew$a_initNew
         bbisListNew[[t+1]]=ParamNew$b_initNew
@@ -401,24 +417,24 @@ ComparMNAR_Bivariate <- function(Xtrue,a,b,a2,b2,r,bruit,Ns,colbis,m1,m2,nbsim){
     RES2=NULL
     gridParam=seq(0,lambda0(X)*1.1, length = 100) 
     for(i in 1:length(gridParam)){
-      X.FISTA2<- FISTANA(as.matrix(XNA),as.matrix(M),gridParam[i],bruit,alg="other")
+      X.FISTA2<- FISTANA(as.matrix(XNA),as.matrix(M),gridParam[i],noise,alg="other")
       RES2[i]=MSE(X.FISTA2[,1:p]*(1-M),X*(1-M))
       RES[i]=MSE(X.FISTA2[,1:p],Xtrue)
     }
-    X.FISTA2<- FISTANA(XNA,M,gridParam[which.min(RES)],bruit,alg="other")
-    X.FISTA2.bis<- FISTANA(XNA,M,gridParam[which.min(RES2)],bruit,alg="other")
+    X.FISTA2<- FISTANA(XNA,M,gridParam[which.min(RES)],noise,alg="other")
+    X.FISTA2.bis<- FISTANA(XNA,M,gridParam[which.min(RES2)],noise,alg="other")
     
     ####With mask
     RES=NULL
     RES2=NULL
     gridParam=seq(0, lambda0(X)*1.1, length = 100) 
     for(i in 1:length(gridParam)){
-      X.FISTA3<- FISTANA(Y,cbind.data.frame(M,M[,1:nbcol]),gridParam[i],bruit,alg="other")
+      X.FISTA3<- FISTANA(Y,cbind.data.frame(M,M[,1:nbcol]),gridParam[i],noise,alg="other")
       RES2[i]=MSE(X.FISTA3[,1:p]*(1-M),X*(1-M))
       RES[i]=MSE(X.FISTA3[,1:p],Xtrue)
     }
-    X.FISTA3<- FISTANA(Y,cbind.data.frame(M,M[,1:nbcol]),gridParam[which.min(RES)],bruit,alg="other")
-    X.FISTA3.bis<- FISTANA(Y,cbind.data.frame(M,M[,1:nbcol]),gridParam[which.min(RES2)],bruit,alg="other")
+    X.FISTA3<- FISTANA(Y,cbind.data.frame(M,M[,1:nbcol]),gridParam[which.min(RES)],noise,alg="other")
+    X.FISTA3.bis<- FISTANA(Y,cbind.data.frame(M,M[,1:nbcol]),gridParam[which.min(RES2)],noise,alg="other")
     
     ###############
     ####### Random Forest
