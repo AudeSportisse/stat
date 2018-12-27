@@ -15,7 +15,7 @@ registerDoSNOW(cl)
 ######
 # Name: ComparMNAR_Bivariate
 # Date: 27/12/2018
-# Description: For the bivariate case (2 missing variables: the first one and another one),this function allow to compare different algorithms and methods to impute and estimate matrices which contain MNAR missing values.
+# Description: For the bivariate case (2 missing variables: the first one and another one),this function allow to compare different algorithms and methods to impute and estimate matrices which contain MNAR or MAR missing values.
 # The function output is a list containing, for each simulation, the mean squared errors (the prediction error and the total error) for the different algorithms and methods.
 # Arguments: 
   #Xtrue: the parameter matrix.
