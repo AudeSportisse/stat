@@ -8,10 +8,26 @@ library(randomForest)
 library(missForest)
 library(doParallel)
 library(doSNOW)
-cl <- makeCluster(20, outfile="")
+cl <- makeCluster(20, outfile="") #here, change the number of clusters
 registerDoSNOW(cl)
 
-ComparMNAR_Univariate <- function(Xtrue,a,b,r,bruit,Ns,modmecha,mecha,nbsim){
+######
+# Name: ComparMNAR_Univariate
+# Date: 27/12/2018
+# Description: For the univariate case (1 missing variable: the first one),this function allow to compare different algorithms and methods to impute and estimate matrices which contain MNAR or MAR missing values.
+# The function output is a list containing, for each simulation, the mean squared errors (the prediction error and the total error) for the different algorithms and methods.
+# Arguments: 
+  #Xtrue: the parameter matrix.
+  #a, b: the logistic regression parameters.
+  #r: rank of the parameter matrix.
+  #noise: sigma^2, the added noise to the parameter matrix.
+  #Ns: number of Monte Carlo simulations in the EM algorithm.
+  #modmecha: if "logit", the missing-data distribution is a logistic regression, otherwise it is a probit distribution.
+  #mecha: "MNAR" or "MAR".
+  #nbsim: number of simulations.
+#####
+
+ComparMNAR_Univariate <- function(Xtrue,a=NULL,b=NULL,r,noise,Ns,modmecha,mecha,nbsim){
   
   nbcol=1
   p<-ncol(Xtrue)
@@ -30,7 +46,7 @@ ComparMNAR_Univariate <- function(Xtrue,a,b,r,bruit,Ns,modmecha,mecha,nbsim){
     while(!conv){
       
       set.seed(ksim)
-      X=Xtrue+matrix(data=rnorm(n*p,0,sqrt(bruit)),ncol=p)
+      X=Xtrue+matrix(data=rnorm(n*p,0,sqrt(noise)),ncol=p)
       
       #Logit or probit distribution
       select_prob <- function(x,modmecha){ #probability of selecting coordinate Xij
@@ -90,7 +106,7 @@ ComparMNAR_Univariate <- function(Xtrue,a,b,r,bruit,Ns,modmecha,mecha,nbsim){
       diff=100
       ccompt<-0
       while(ccompt<20){
-        ParamNew <- IterEM(Xtrue,X,XNA,ThetaNew,aNew,bNew,M,Ns,bruit,algo="soft",lam="Pred",nbcol=1)
+        ParamNew <- IterEM(Xtrue,X,XNA,ThetaNew,aNew,bNew,M,Ns,noise,algo="soft",lam="Pred",nbcol=1)
         diff=ParamNew$diff
         print(diff)
         ThetaNew=ParamNew$ThetaNew
@@ -104,7 +120,7 @@ ComparMNAR_Univariate <- function(Xtrue,a,b,r,bruit,Ns,modmecha,mecha,nbsim){
       diff=100
       ccompt2<-0
       while(ccompt2 < 20){
-        ParamNew <- IterEM(Xtrue,X,XNA,ThetabisNew,abisNew,bbisNew,M,Ns,bruit,algo="FISTA",lam="Pred",nbcol=1)
+        ParamNew <- IterEM(Xtrue,X,XNA,ThetabisNew,abisNew,bbisNew,M,Ns,noise,algo="FISTA",lam="Pred",nbcol=1)
         diff=ParamNew$diff
         ThetabisNew=ParamNew$ThetaNew
         abisNew=ParamNew$a_initNew
@@ -130,13 +146,13 @@ ComparMNAR_Univariate <- function(Xtrue,a,b,r,bruit,Ns,modmecha,mecha,nbsim){
       conv4=c()
       pb <- txtProgressBar(min = 0, max = 50, title = 'Blabrf', label = 'fgrtgr')
       for (t in 1:Tt){
-        ParamNew <- IterEM(Xtrue,X,XNA,Theta[[t]],aListNew[[t]],bListNew[[t]],M,Ns,bruit,algo="soft",lam="Pred",nbcol=1)
+        ParamNew <- IterEM(Xtrue,X,XNA,Theta[[t]],aListNew[[t]],bListNew[[t]],M,Ns,noise,algo="soft",lam="Pred",nbcol=1)
         Theta[[t+1]]=ParamNew$ThetaNew
         aListNew[[t+1]]=ParamNew$a_initNew
         bListNew[[t+1]]=ParamNew$b_initNew
         conv3=c(conv3,ParamNew$conv)
         
-        ParamNew <- IterEM(Xtrue,X,XNA,Thetabis[[t]],abisListNew[[t]],bbisListNew[[t]],M,Ns,bruit,algo="FISTA",lam="Pred",nbcol=1)
+        ParamNew <- IterEM(Xtrue,X,XNA,Thetabis[[t]],abisListNew[[t]],bbisListNew[[t]],M,Ns,noise,algo="FISTA",lam="Pred",nbcol=1)
         Thetabis[[t+1]]=ParamNew$ThetaNew
         abisListNew[[t+1]]=ParamNew$a_initNew
         bbisListNew[[t+1]]=ParamNew$b_initNew
@@ -161,7 +177,7 @@ ComparMNAR_Univariate <- function(Xtrue,a,b,r,bruit,Ns,modmecha,mecha,nbsim){
       diff=100
       ccompt3=0
       while(ccompt3<20){
-        ParamNew <- IterEM(Xtrue,X,XNA,ThetaNewTot,aNew,bNew,M,Ns,bruit,algo="soft",lam="Tot",nbcol=1)
+        ParamNew <- IterEM(Xtrue,X,XNA,ThetaNewTot,aNew,bNew,M,Ns,noise,algo="soft",lam="Tot",nbcol=1)
         diff=ParamNew$diff
         ThetaNewTot=ParamNew$ThetaNew
         aNew=ParamNew$a_initNew
@@ -174,7 +190,7 @@ ComparMNAR_Univariate <- function(Xtrue,a,b,r,bruit,Ns,modmecha,mecha,nbsim){
       diff=100
       ccompt4=0
       while(ccompt4<20){
-        ParamNew <- IterEM(Xtrue,X,XNA,ThetabisNewTot,abisNew,bbisNew,M,Ns,bruit,algo="FISTA",lam="Tot",nbcol=1)
+        ParamNew <- IterEM(Xtrue,X,XNA,ThetabisNewTot,abisNew,bbisNew,M,Ns,noise,algo="FISTA",lam="Tot",nbcol=1)
         diff=ParamNew$diff
         ThetabisNewTot=ParamNew$ThetaNew
         abisNew=ParamNew$a_initNew
@@ -201,13 +217,13 @@ ComparMNAR_Univariate <- function(Xtrue,a,b,r,bruit,Ns,modmecha,mecha,nbsim){
       conv8=c()
       pb <- txtProgressBar(min = 0, max = 50, title = 'Blabrf', label = 'fgrtgr')
       for (t in 1:Tt){
-        ParamNew <- IterEM(Xtrue,X,XNA,Theta[[t]],aListNew[[t]],bListNew[[t]],M,Ns,bruit,algo="soft",lam="Tot",nbcol=1)
+        ParamNew <- IterEM(Xtrue,X,XNA,Theta[[t]],aListNew[[t]],bListNew[[t]],M,Ns,noise,algo="soft",lam="Tot",nbcol=1)
         Theta[[t+1]]=ParamNew$ThetaNew
         aListNew[[t+1]]=ParamNew$a_initNew
         bListNew[[t+1]]=ParamNew$b_initNew
         conv7=c(conv3,ParamNew$conv)
         
-        ParamNew <- IterEM(Xtrue,X,XNA,Thetabis[[t]],abisListNew[[t]],bbisListNew[[t]],M,Ns,bruit,algo="FISTA",lam="Tot",nbcol=1)
+        ParamNew <- IterEM(Xtrue,X,XNA,Thetabis[[t]],abisListNew[[t]],bbisListNew[[t]],M,Ns,noise,algo="FISTA",lam="Tot",nbcol=1)
         Thetabis[[t+1]]=ParamNew$ThetaNew
         abisListNew[[t+1]]=ParamNew$a_initNew
         bbisListNew[[t+1]]=ParamNew$b_initNew
@@ -331,7 +347,7 @@ ComparMNAR_Univariate <- function(Xtrue,a,b,r,bruit,Ns,modmecha,mecha,nbsim){
     X.pca.true.2.bis=imputePCA(Y,ncp=list[which.min(RES2)],maxiter=10000)$fittedX
     
     ###############
-    ####### Algorithm Genevieve
+    ####### Mimi algorithm
     ###############
     
     var.type = c(rep("gaussian", p),rep("binary", nbcol))
@@ -357,24 +373,24 @@ ComparMNAR_Univariate <- function(Xtrue,a,b,r,bruit,Ns,modmecha,mecha,nbsim){
     RES2=NULL
     gridParam=seq(0,lambda0(X)*1.1, length = 100) 
     for(i in 1:length(gridParam)){
-      X.FISTA2<- FISTANA(as.matrix(XNA),as.matrix(M),gridParam[i],bruit,alg="other")
+      X.FISTA2<- FISTANA(as.matrix(XNA),as.matrix(M),gridParam[i],noise,alg="other")
       RES2[i]=MSE(X.FISTA2[,1:p]*(1-M),X*(1-M))
       RES[i]=MSE(X.FISTA2[,1:p],Xtrue)
     }
-    X.FISTA2<- FISTANA(XNA,M,gridParam[which.min(RES)],bruit,alg="other")
-    X.FISTA2.bis<- FISTANA(XNA,M,gridParam[which.min(RES2)],bruit,alg="other")
+    X.FISTA2<- FISTANA(XNA,M,gridParam[which.min(RES)],noise,alg="other")
+    X.FISTA2.bis<- FISTANA(XNA,M,gridParam[which.min(RES2)],noise,alg="other")
     
     ####With mask
     RES=NULL
     RES2=NULL
     gridParam=seq(0, lambda0(X)*1.1, length = 100) 
     for(i in 1:length(gridParam)){
-      X.FISTA3<- FISTANA(Y,cbind.data.frame(M,M[,1:nbcol]),gridParam[i],bruit,alg="other")
+      X.FISTA3<- FISTANA(Y,cbind.data.frame(M,M[,1:nbcol]),gridParam[i],noise,alg="other")
       RES2[i]=MSE(X.FISTA3[,1:p]*(1-M),X*(1-M))
       RES[i]=MSE(X.FISTA3[,1:p],Xtrue)
     }
-    X.FISTA3<- FISTANA(Y,cbind.data.frame(M,M[,1:nbcol]),gridParam[which.min(RES)],bruit,alg="other")
-    X.FISTA3.bis<- FISTANA(Y,cbind.data.frame(M,M[,1:nbcol]),gridParam[which.min(RES2)],bruit,alg="other")
+    X.FISTA3<- FISTANA(Y,cbind.data.frame(M,M[,1:nbcol]),gridParam[which.min(RES)],noise,alg="other")
+    X.FISTA3.bis<- FISTANA(Y,cbind.data.frame(M,M[,1:nbcol]),gridParam[which.min(RES2)],noise,alg="other")
     
     ###############
     ####### Random Forest
@@ -391,10 +407,8 @@ ComparMNAR_Univariate <- function(Xtrue,a,b,r,bruit,Ns,modmecha,mecha,nbsim){
     
     
     ###############
-    ####### Calcul of MSE
+    ####### MSE
     ###############
-    
-    #Premier mécanisme
     
     msePred=sapply(list(X.mean[,1:p]*(1-M),ThetaNew[,1:p]*(1-M),ThetabisNew[,1:p]*(1-M),ThetaNewTot[,1:p]*(1-M),ThetabisNewTot[,1:p]*(1-M),X1.soft[,1:p]*(1-M),X1.soft.bis[,1:p]*(1-M),X1.soft.2[,1:p]*(1-M),X1.soft.2.bis[,1:p]*(1-M),X.pca.true[,1:p]*(1-M),X.pca.true.bis[,1:p]*(1-M),X.pca.true.2[,1:p]*(1-M),X.pca.true.2.bis[,1:p]*(1-M),X.mimi[,1:p]*(1-M),X.mimi.bis[,1:p]*(1-M),X.FISTA2[,1:p]*(1-M),X.FISTA2.bis[,1:p]*(1-M),X.FISTA3[,1:p]*(1-M),X.FISTA3.bis[,1:p]*(1-M),X.rf[,1:p]*(1-M),X.rf.2[,1:p]*(1-M)),MSE,X2=X*(1-M))
     mseTrue=sapply(list(X.mean[,1:p],ThetaNew[,1:p],ThetabisNew[,1:p],ThetaNewTot[,1:p],ThetabisNewTot[,1:p],X1.soft[,1:p],X1.soft.bis[,1:p],X1.soft.2[,1:p],X1.soft.2.bis[,1:p],X.pca.true[,1:p],X.pca.true.bis[,1:p],X.pca.true.2[,1:p],X.pca.true.2.bis[,1:p],X.mimi[,1:p],X.mimi.bis[,1:p],X.FISTA2[,1:p],X.FISTA2.bis[,1:p],X.FISTA3[,1:p],X.FISTA3.bis[,1:p],X.rf[,1:p],X.rf.2[,1:p]),MSE,X2=Xtrue)
