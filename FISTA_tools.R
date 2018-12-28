@@ -32,7 +32,19 @@ soft_thresh_svd <- function(X,alg,gamma,ncp){ #performs soft thresholding in the
   return(X_res)
 }
 
-FISTA0 <- function(X,param,bruit){ #algorithm FISTA without missing values
+
+######
+# Name: FISTA0
+# Date: 27/12/2018
+# Description: FISTA algorithm without missing values.
+# Arguments: 
+  #X: matrix.
+  #param: the regularization parameter of the optimization problem. 
+  #noise: sigma^2. 
+#####
+
+
+FISTA0 <- function(X,param,noise){
   X=as.matrix(X) 
   niter=200
   lambdaNew=0.1
@@ -42,7 +54,7 @@ FISTA0 <- function(X,param,bruit){ #algorithm FISTA without missing values
     xOld=xNew
     yOld=yNew
     lambdaOld=lambdaNew
-    xNew=soft_thresh_svd(as.matrix(yOld-(yOld-X)),alg="soft",param,ncp=NULL)
+    xNew=soft_thresh_svd(as.matrix(yOld-(yOld-X)),alg="soft",param,ncp=NULL) #soft-thresholding by default. 
     lambdaNew=(1+sqrt(1+4*lambdaOld**2))/2
     yNew=xNew+((lambdaOld-1)/lambdaNew)*(xNew-xOld)
     diff=norm(xNew-xOld,type="F")
@@ -51,13 +63,23 @@ FISTA0 <- function(X,param,bruit){ #algorithm FISTA without missing values
 }
 
 
-FISTANA <- function(X,M,param,bruit,alg,ncp=NULL){ #algorithm FISTA with missing values
-  
-  #Initialization:
+######
+# Name: FISTANA
+# Date: 27/12/2018
+# Description: FISTA algorithm with missing values.
+# Arguments: 
+  #X: matrix.
+  #M: the missing-data matrix.
+  #param: the regularization parameter of the optimization problem. 
+  #noise: sigma^2. 
+  #alg: "soft" for soft-thresholding, "hard" for hard-thresholding, "thresh" for soft-thresholding and for each iteration of the FISTA algorithm, the missing value is imputed by the maximum between the threshold (assumed to be known) and the imputed value. 
+#####
+
+
+FISTANA <- function(X,M,param,noise,alg,ncp=NULL){ 
   X=as.matrix(X) 
   missing=which(is.na(X))
-  X=ImputeMean0(X) #imputes the missing values by the mean
-  
+  X=ImputeMean0(X)
   lambdaNew=0.1
   xNew=yNew=matrix(0,ncol=ncol(X),nrow=nrow(X))
   diff=1
@@ -80,12 +102,22 @@ FISTANA <- function(X,M,param,bruit,alg,ncp=NULL){ #algorithm FISTA with missing
   return(xNew)
 }
 
-FISTA <- function(X,M,param,a,b,bruit){ #Algorithms FISTA by modelling the mechanism with the intuitive idea
-  
-  #Initialization:
+
+######
+# Name: FISTA
+# Date: 27/12/2018
+# Description: FISTA algorithm by modelling the mechanism with an intuitive idea if the missing values are introduced in the parameter matrix. 
+# Arguments: 
+  #X: matrix.
+  #M: the missing-data matrix.
+  #param: the regularization parameter of the optimization problem. 
+  #a,b: mechanism parameters
+  #noise: sigma^2. 
+######
+
+FISTA <- function(X,M,param,a,b,noise){ 
   X=as.matrix(X)
-  X=ImputeMean0(X) #imputes the missing values by the mean
-  
+  X=ImputeMean0(X) 
   lambdaNew=0.1
   xNew=yNew=matrix(0,ncol=ncol(X),nrow=nrow(X))
   diff=1
@@ -99,7 +131,7 @@ FISTA <- function(X,M,param,a,b,bruit){ #Algorithms FISTA by modelling the mecha
         grad[i,j]=(a*exp(a*yOld[i,j])/(exp(a*b)+exp(a*yOld[i,j])))
       }
     }
-    xNew=soft_thresh_svd(as.matrix(yOld-(1/((1/bruit)+a^2/4))*((M*(1/bruit)*(yOld-X)+M*grad))),param)
+    xNew=soft_thresh_svd(as.matrix(yOld-(1/((1/noise)+a^2/4))*((M*(1/noise)*(yOld-X)+M*grad))),param)
     lambdaNew=(1+sqrt(1+4*lambdaOld**2))/2
     yNew=xNew+((lambdaOld-1)/lambdaNew)*(xNew-xOld)
     diff=norm(xNew-xOld,type="F")
