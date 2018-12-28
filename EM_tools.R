@@ -5,9 +5,14 @@ source("FISTA_tools.R", local = TRUE)
 source("General_tools.R", local = TRUE)
 
 
-#######
-#Initialization of the EM algorithm
-#######
+######
+# Name: Initialize_theta
+# Date: 27/12/2018
+# Description: Initialization of the EM algorithm: it performs the SVD of the matrix X and keeps r dimensions. This function returns a matrix.
+# Arguments: 
+  #X: matrix.
+  #r: the rank of the output matrix.
+#####
 
 
 Initialize_theta <- function(X, r) {
@@ -17,12 +22,24 @@ Initialize_theta <- function(X, r) {
 }
 
 
-#######
-#Univariate and multivariate case 
-#######
-
-#The mechanism parameters are the same ones for all the variables.
-#The missing variables are the first nbcol variables.
+######
+# Name: IterEM
+# Date: 27/12/2018
+# Description: It computes one iteration of the EM algorithm for the univariate and multivariate cases. In particular, the mechanism parameters are the same ones for all the variables and the missing variables are the first nbcol variables.
+# This function returns: the difference between the last matrix iteration and the new one, the new matrix, the new mechanisms parameters and if the GLM algorithm has converged.
+# Arguments: 
+  #Xtrue: parameter matrix. 
+  #X: data matrix.
+  #XNA: data matrix X containing missing values.  
+  #Thet: old matrix iteration.
+  #a, b: old mechanism parameters. 
+  #M: missing-data matrix.
+  #Ns: number of Monte Carlo simulations.
+  #noise: sigma^2.
+  #algo: "soft" or "FISTA" depending on the algorithm used for M-step. 
+  #lam: "Tot" or "Pred" depending on how the lambda is chosen. 
+  #nbcol: number of misisng variables.
+#####
 
 
 IterEM <- function(Xtrue,
@@ -33,7 +50,7 @@ IterEM <- function(Xtrue,
                    b,
                    M,
                    Ns,
-                   bruit,
+                   noise,
                    algo,
                    lam,
                    nbcol) {
@@ -63,7 +80,7 @@ IterEM <- function(Xtrue,
     return(res)
   }
   
-  sigma = sqrt(bruit)
+  sigma = sqrt(noise)
   XNA_remp = XNA
   data_remp <- list()
   nbNA = 0
@@ -126,14 +143,14 @@ IterEM <- function(Xtrue,
     RES = NULL
     gridParam = seq(0, lambda0(X) * 1.1, length = 100)
     for (i in 1:length(gridParam)) {
-      X.FISTA2 = FISTA0(XNA_remp, gridParam[i], bruit)
+      X.FISTA2 = FISTA0(XNA_remp, gridParam[i], noise)
       if (lam == "Tot") {
         RES[i] = MSE(X.FISTA2, Xtrue)
       } else{
         RES[i] = MSE(X.FISTA2 * (1 - M), X * (1 - M))
       }
     }
-    ThetaNew = FISTA0(XNA_remp, gridParam[which.min(RES)], bruit)
+    ThetaNew = FISTA0(XNA_remp, gridParam[which.min(RES)], noise)
   }
   
   M_concat = rep(as.vector(M[,1]), Ns )
@@ -169,11 +186,24 @@ IterEM <- function(Xtrue,
 }
 
 
-#######
-#Bivariate case 
-#######
-
-# The missing variables are the first one and the colbis one.
+######
+# Name: IterEM_Bivariate
+# Date: 27/12/2018
+# Description: It computes one iteration of the EM algorithm for the bivariate case. In particular, the missing variables are the first one and the colbis one.
+# This function returns: the difference between the last matrix iteration and the new one, the new matrix, the new mechanisms parameters and if the GLM algorithm has converged.
+# Arguments: 
+  #Xtrue: parameter matrix. 
+  #X: data matrix.
+  #XNA: data matrix X containing missing values.  
+  #Thet: old matrix iteration.
+  #a, b, a2, b2: old mechanism parameters. 
+  #M: missing-data matrix.
+  #Ns: number of Monte Carlo simulations.
+  #noise: sigma^2.
+  #algo: "soft" or "FISTA" depending on the algorithm used for M-step. 
+  #lam: "Tot" or "Pred" depending on how the lambda is chosen. 
+  #colbis: the second missing variable.
+#####
 
 
 IterEM_Bivariate <-
@@ -187,7 +217,7 @@ IterEM_Bivariate <-
            b2,
            M,
            Ns,
-           bruit,
+           noise,
            algo,
            lam,
            colbis) {
@@ -220,7 +250,7 @@ IterEM_Bivariate <-
       return(res)
     }
     
-    sigma = sqrt(bruit)
+    sigma = sqrt(noise)
     XNA_remp = XNA
     data_remp = list()
     data_remp2 = list()
@@ -292,14 +322,14 @@ IterEM_Bivariate <-
       RES = NULL
       gridParam = seq(0, lambda0(X) * 1.1, length = 100)
       for (i in 1:length(gridParam)) {
-        X.FISTA2 = FISTA0(XNA_remp, gridParam[i], bruit)
+        X.FISTA2 = FISTA0(XNA_remp, gridParam[i], noise)
         if (lam == "Tot") {
           RES[i] = MSE(X.FISTA2, Xtrue)
         } else{
           RES[i] = MSE(X.FISTA2 * (1 - M), X * (1 - M))
         }
       }
-      ThetaNew = FISTA0(XNA_remp, gridParam[which.min(RES)], bruit)
+      ThetaNew = FISTA0(XNA_remp, gridParam[which.min(RES)], noise)
     }
     
     
