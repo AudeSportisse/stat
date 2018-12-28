@@ -1,5 +1,4 @@
-#MSE
-MSE2 <- function(X1, X2){ return(sum((X1 - X2)^2))}
+#MSE (normalized)
 MSE <- function(X1, X2){ return(norm(as.matrix(X1 - X2),type="F")/norm(as.matrix(X2),type="F"))}
 
 #SNR:
