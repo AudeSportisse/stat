@@ -14,9 +14,13 @@ noise=0.8
 Ns=500
 dat=rnorm(n)
 Xtrue=cbind.data.frame(dat,dat*1.1,dat*1.2,dat*1.3)
-resultProbitUnivariate=ComparMNAR_Univariate(Xtrue,a,b,r,noise,Ns,"probit","MNAR",nbsim) #probit, MNAR
-resultUnivariate=ComparMNAR_Univariate(Xtrue,a,b,r,noise,Ns,"logit","MNAR",nbsim) #logit, MNAR
-resultMARUnivariate=ComparMNAR_Univariate(Xtrue,a,b,r,noise,Ns,"logit","MAR",nbsim) #logit, MAR
+
+##Figure 2 (logit, MNAR)
+resultUnivariate=ComparMNAR_Univariate(Xtrue,a,b,r,noise,Ns,"logit","MNAR",nbsim)
+##Figure 5 (logit, MAR)
+resultMARUnivariate=ComparMNAR_Univariate(Xtrue,a,b,r,noise,Ns,"logit","MAR",nbsim) 
+#Figure 7 (probit, MNAR)
+resultProbitUnivariate=ComparMNAR_Univariate(Xtrue,a,b,r,noise,Ns,"probit","MNAR",nbsim) 
 
 
 ######
@@ -37,8 +41,11 @@ noise=0.8
 Ns=500
 res=simu(n,p,r,sqrt(noise))
 Xtrue=res$mu
-resultMARBivariate=ComparMNAR_Bivariate(Xtrue,a,b,a2,b2,r,noise,Ns,colbis=4,m1=10,m2=20,nbsim) #MAR mechanism
-resultMNARBivariate=ComparMNAR_Bivariate(Xtrue,a,b,a2,b2,r,noise,Ns,colbis=4,m1=1,m2=4,nbsim) #MNAR mechnanism
+
+##Figure 6 (MAR)
+resultMARBivariate=ComparMNAR_Bivariate(Xtrue,a,b,a2,b2,r,noise,Ns,colbis=4,m1=10,m2=20,nbsim) 
+##Figure 3 (MNAR)
+resultMNARBivariate=ComparMNAR_Bivariate(Xtrue,a,b,a2,b2,r,noise,Ns,colbis=4,m1=1,m2=4,nbsim)
 
 #######
 #Multivariate
@@ -56,4 +63,6 @@ nbsim=50
 noise=0.5 
 Ns=500
 Xtrue=simu(n,p,r,sqrt(noise))$mu
+
+##Figure 4 (for different noise values)
 result2=ComparMNAR_Multivariate(Xtrue,a,b,r,noise,Ns,10,nbsim)
