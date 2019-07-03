@@ -1,4 +1,4 @@
-Imputation and estimation of matrices containing MNAR missing values
+Imputation and estimation of low-rank matrices containing MNAR missing values 
 =======
 
 If you use this code in your project, please cite:
