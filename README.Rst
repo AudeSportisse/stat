@@ -2,7 +2,7 @@
 Imputation and estimation of low-rank matrices containing MNAR missing values 
 =======
 
-This repository hosts the code to impute low-rank matrices containing Missing Not At Random (MNAR) values and to estimate the low-rank parameter. Different matrix completion methods are considered, more details are given in **[1]**. 
+This repository hosts the code to impute and estimate low-rank matrices containing Missing Not At Random (MNAR) values. Different matrix completion methods are considered, including a model-based estimation strategy by modelling the missing mechanism distribution. More details are given in **[1]**.
 
 
 ---------------
