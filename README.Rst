@@ -1,5 +1,12 @@
+=======
 Imputation and estimation of low-rank matrices containing MNAR missing values 
 =======
+
+
+---------------
+Cite:
+---------------
+
 
 If you use this code in your project, please cite:
 
