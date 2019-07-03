@@ -5,5 +5,6 @@ If you use this code in your project, please cite:
 
 .. parsed-literal::
 
-   [1] Aude Sportisse, Claire Boyer, and Julie Josse. Imputation and low-rank estimation with missing
-non at random data. arXiv preprint arXiv:1812.11409, 2018.
+   [1] Aude Sportisse, Claire Boyer, and Julie Josse. Imputation and low-rank estimation with missing non at random data.           arXiv preprint arXiv:1812.11409, 2018.
+
+
