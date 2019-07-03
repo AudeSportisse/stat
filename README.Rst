@@ -10,5 +10,5 @@ If you use this code in your project, please cite:
    arXiv preprint arXiv:1812.11409, 2018.
 
 
-Get the PDF of the paper here: `<https://arxiv.org/pdf/1812.11409.pdf>`_
+Get the PDF of the paper `here: <https://arxiv.org/pdf/1812.11409.pdf>`_
 
