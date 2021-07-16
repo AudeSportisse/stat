@@ -1,0 +1,58 @@
+---
+title: "Real Data EM algorithm for MNAR data"
+output: html_notebook
+---
+
+```{r}
+library(missMDA)
+```
+
+
+```{r}
+data(ozone)
+ozone <- ozone[1:11] #only quantitative variables
+sum(is.na(ozone))
+X <- data.matrix(ozone)
+```
+
+```{r}
+source("EMmodel_realdata.R")
+```
+
+```{r}
+library(FactoMineR)
+library(denoiseR)
+```
+
+```{r, Estimation of the noise level}
+scale=TRUE
+  if(scale==TRUE){
+    meanX <- apply(X, 2,mean,na.rm=TRUE)
+    X_train_ord <- t(t(X) - meanX)
+    etX <- apply(X, 2,sd,na.rm=TRUE)
+    X <- t(t(X_train_ord)/etX)
+  }
+  ncp=estim_ncpPCA(X,method.cv="kfold")$ncp
+  print(ncp)
+  comp=imputePCA(X,ncp=ncp)$completeObs
+  sigma = estim_sigma(comp,k=ncp) 
+  if(scale==TRUE){
+    X <- t(t(X) * etX )
+    X <- t(t(X) + meanX )
+  }
+  noise <- sigma^2
+```
+
+```{r}
+nbcol <- ncol(X) #all the variables contain missing values
+Ns <- 500
+a <- rep(1,nbcol) #random initialization (between -1 and 1)
+b <- rep(-1,nbcol)  #random initialization (between -1 and 1)
+res <- EMMNAR_Multivariate_realdata(X,a,b,noise,Ns,nbcol,scale=TRUE,nbit=2)
+```
+
+```{r}
+res$names
+res$data_imp[[1]]
+```
+
